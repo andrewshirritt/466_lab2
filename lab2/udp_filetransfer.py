@@ -100,7 +100,7 @@ class UDPFileTransfer(CommInterface):
 
 
         chunk = f'{snumber}|||end'.encode()
-        self.socket.sendto(chunk, addr)
+        self._send(chunk, addr)
         while True:
             try:
                 ack , addr = self.socket.recvfrom(CHUNK_SIZE)
