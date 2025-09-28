@@ -5,7 +5,7 @@ import time
 
 from comm_interface import CommInterface
 
-random.seed(1)
+random.seed(40)
 DROP_PROBABILITY = 0.1
 DUPLICATE_PROBABILITY = 0.1
 LAG_PROBABILITY = 0.1
@@ -40,6 +40,7 @@ class UDPFileTransfer(CommInterface):
         self.socket.sendto(message, dest_addr)
 
     def send_message(self, data, filename="", addr=None):
+        attempt = 0
         message = data + ":" + filename + ":" + str(self.sendsnumber)
         encodedmsg = message.encode()
         self._send(encodedmsg, addr)
@@ -61,6 +62,10 @@ class UDPFileTransfer(CommInterface):
                 except:
                     print(f"sending again packet {self.sendsnumber}")
                     self._send(encodedmsg, addr)
+                    attempt += 1
+                    if attempt > 10:
+                        self.sendsnumber += 1
+                        break
         else:
             for i in range(10):
                 self._send(encodedmsg, addr)
@@ -101,10 +106,11 @@ class UDPFileTransfer(CommInterface):
 
         chunk = f'{snumber}|||end'.encode()
         self._send(chunk, addr)
+        attempt = 0
         while True:
             try:
                 ack , addr = self.socket.recvfrom(CHUNK_SIZE)
-                if ack.startswith(b'ack:'):
+                if ack.startswith(b'end:'):
                     acknumber = ack.decode().split(":")[1]
                     acknumber = int(acknumber)
                     if snumber == acknumber:
@@ -115,7 +121,10 @@ class UDPFileTransfer(CommInterface):
             except:
 
                 self._send(chunk, addr)
+                attempt += 1
                 print("sending again")
+                if attempt > 10:
+                    break
 
     def receive_message(self):
         while True:
@@ -130,7 +139,6 @@ class UDPFileTransfer(CommInterface):
 
 
                 if snumber == self.recvsnumber:
-
 
 
                     ackmsg = f"ACK:{snumber}".encode()
@@ -160,31 +168,32 @@ class UDPFileTransfer(CommInterface):
 
                     try:
                         chunk, addr = self.socket.recvfrom(self.CHUNK_SIZE)
-                        if chunk.startswith(b'ack:') or chunk.startswith(b'GET:') or chunk.startswith(b'PUT:') or chunk.startswith(b'QUT'):
+                        if chunk.startswith(b'ack:') or chunk.startswith(b'GET:') or chunk.startswith(b'PUT:') or chunk.startswith(b'QUT') or chunk.startswith(b'ACK:'):
 
                             continue
                         break
                     except:
                         pass
 
+                #print(chunk)
 
                 snumber, message = chunk.split(b'|||')
                 #
-                # ackmsg = f'ack:{snumber}'.encode()
-                #
-                # self.socket.sendto(ackmsg, addr)
+
 
                 snumber = int(snumber)
+
 
                 if snumber == recvnumber:
                     ackmsg = f'ack:{snumber}'.encode()
                     self._send(ackmsg, addr)
-                    recvnumber += 1
+
 
                     if message == b'end':
-                        ackmsg = f'ack:{recvnumber}'.encode()
+                        ackmsg = f'end:{recvnumber}'.encode()
                         self._send(ackmsg, addr)
                         break
+                    recvnumber += 1
                     f.write(message)
                 else:
                     ackmsg = f'ack:{snumber}'.encode()
