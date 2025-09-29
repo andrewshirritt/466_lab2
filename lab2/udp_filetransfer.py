@@ -130,7 +130,7 @@ class UDPFileTransfer(CommInterface):
         while True:
             try:
                 message, addr = self.socket.recvfrom(self.CHUNK_SIZE)
-                if message.startswith(b'ack:') or message.startswith(b'ACK'):
+                if message.startswith(b'ack:') or message.startswith(b'ACK') or message.startswith(b'end:'):
 
                     continue
 
@@ -168,7 +168,7 @@ class UDPFileTransfer(CommInterface):
 
                     try:
                         chunk, addr = self.socket.recvfrom(self.CHUNK_SIZE)
-                        if chunk.startswith(b'ack:') or chunk.startswith(b'GET:') or chunk.startswith(b'PUT:') or chunk.startswith(b'QUT') or chunk.startswith(b'ACK:'):
+                        if chunk.startswith(b'ack:') or chunk.startswith(b'GET:') or chunk.startswith(b'PUT:') or chunk.startswith(b'QUT') or chunk.startswith(b'ACK:') or chunk.startswith(b'end:'):
 
                             continue
                         break
