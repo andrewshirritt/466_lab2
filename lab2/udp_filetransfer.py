@@ -5,7 +5,7 @@ import time
 
 from comm_interface import CommInterface
 
-random.seed(40)
+random.seed(23)
 DROP_PROBABILITY = 0.1
 DUPLICATE_PROBABILITY = 0.1
 LAG_PROBABILITY = 0.1
@@ -63,11 +63,11 @@ class UDPFileTransfer(CommInterface):
                     print(f"sending again packet {self.sendsnumber}")
                     self._send(encodedmsg, addr)
                     attempt += 1
-                    if attempt > 10:
+                    if attempt > 5:
                         self.sendsnumber += 1
                         break
         else:
-            for i in range(10):
+            for i in range(250):
                 self._send(encodedmsg, addr)
 
 
@@ -123,7 +123,7 @@ class UDPFileTransfer(CommInterface):
                 self._send(chunk, addr)
                 attempt += 1
                 print("sending again")
-                if attempt > 10:
+                if attempt > 5:
                     break
 
     def receive_message(self):
